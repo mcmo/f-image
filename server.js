@@ -17,11 +17,31 @@ server.register(require('inert'), (err) => {
   
   server.route({
     method: 'GET',
-    path: '/',
+    path: '/api/imagesearch/{term}',
     handler: function(request, reply){
-      reply('hapi is happy')
+      reply({
+        term: request.params.term,
+        when: ""
+      })
     }
   })
+  
+  server.route({
+    method: 'GET',
+    path: '/api/latest/imagesearch',
+    handler: function(request, reply){
+      reply('you requested latest searches')
+    }
+  })
+  
+  server.route({
+    method: 'GET',
+    path: '/',
+    handler: function(request, reply){
+      reply.file('index.html')
+    }
+  })
+  
 })
 
 server.start(() => console.log('starting'))

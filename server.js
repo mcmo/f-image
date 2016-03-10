@@ -26,7 +26,9 @@ server.register(require('inert'), (err) => {
       Bing.images(term, {
         top: 10, // Number of results (max 15 for news, max 50 if other) 
         skip: offset // Skip first x results 
-      }, function(error, res, body) {
+      }, function(err, res, body) {
+        if (err) throw err
+        saveSearch(term)
         const results = body.d.results
         let mapped = results.map((result) => {
           return {url: result.MediaUrl, snippet: result.Title, thumbnail: result.Thumbnail.MediaUrl, context: result.SourceUrl}
@@ -40,7 +42,7 @@ server.register(require('inert'), (err) => {
     method: 'GET',
     path: '/api/latest/imagesearch',
     handler: function(request, reply) {
-      reply('you requested latest searches')
+      getLatest(reply)
     }
   })
 
@@ -55,3 +57,27 @@ server.register(require('inert'), (err) => {
 })
 
 server.start(() => console.log('starting'))
+
+function saveSearch(term){
+  mongo.connect(uri, function(err, db){
+    if (err) throw err
+    const searches = db.collection('searches')
+    searches.insert({
+      term: term,
+      when: new Date()
+    }, function(err, result){
+      if (err) throw err
+    })
+  })
+}
+
+function getLatest(reply){
+  mongo.connect(uri, function(err, db){
+    if (err) throw err
+    const searches = db.collection('searches')
+    searches.find({}, {_id:0}).sort({when: -1}).limit(10).toArray(function(err, result){
+      if (err) throw err
+      reply(result)
+    })
+  })
+}
